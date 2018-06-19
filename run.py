@@ -1,33 +1,13 @@
 import os
 from math import log
-
 import pandas as pd
 from pyspark.sql import SparkSession
-
 from sklearn.datasets import load_iris
-
 from operator import add
-
 import numpy as np
 
-os.environ[
-    'HADOOP_USER_NAME'] = 'lior'  # to avoid Permissio denied: user=root, access=WRITE, inode="/user":hdfs:supergroup:dr
-
-spark = SparkSession \
-    .builder \
-    .appName('dstamp') \
-    .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
-    .config("spark.dynamicAllocation.maxExecutors", "6") \
-    .enableHiveSupport() \
-    .getOrCreate()
-
-home_path = os.path.join('res', 'data')
-subjects = ['subject101']
-subjects_similarity_data = ['SubjectInformation.csv', 'activitySummary.csv']
-split_rate = 0.8
-results = []
-subjects_best_models = {}
-subjects_models_class_results = {}
+from pyspark.ml.classification import DecisionTreeClassifier, RandomForestClassifier, GBTClassifier, LinearSVC, \
+    NaiveBayes
 
 
 def extract_features_subject(spark, subject_file):
@@ -52,16 +32,6 @@ def split_dataset(spark, subject_features, split_rate, subject_file):
     pass
 
 
-from pyspark.ml.classification import DecisionTreeClassifier, RandomForestClassifier, GBTClassifier, LinearSVC, \
-    NaiveBayes
-
-models = [dict(name='DT', params={}, model_class=DecisionTreeClassifier),
-          dict(name='RF', params={}, model_class=RandomForestClassifier),
-          dict(name='GBT', params={}, model_class=GBTClassifier),
-          dict(name='SVC', params={}, model_class=LinearSVC),
-          dict(name='NB', params={}, model_class=NaiveBayes)]
-
-
 def evaluate_model(test, preds):
     """
     returns metrics of the predictions
@@ -71,6 +41,30 @@ def evaluate_model(test, preds):
     """
     pass
 
+
+
+os.environ[
+    'HADOOP_USER_NAME'] = 'lior'  # to avoid Permissio denied: user=root, access=WRITE, inode="/user":hdfs:supergroup:dr
+spark = SparkSession \
+    .builder \
+    .appName('dstamp') \
+    .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
+    .config("spark.dynamicAllocation.maxExecutors", "6") \
+    .enableHiveSupport() \
+    .getOrCreate()
+
+home_path = os.path.join('res', 'data')
+subjects = ['subject101']
+models = [dict(name='DT', params={}, model_class=DecisionTreeClassifier),
+          dict(name='RF', params={}, model_class=RandomForestClassifier),
+          dict(name='GBT', params={}, model_class=GBTClassifier),
+          dict(name='SVC', params={}, model_class=LinearSVC),
+          dict(name='NB', params={}, model_class=NaiveBayes)]
+subjects_similarity_data = ['SubjectInformation.csv', 'activitySummary.csv']
+split_rate = 0.8
+results = []
+subjects_best_models = {}
+subjects_models_class_results = {}
 
 for subject in subjects:
     subject_file = home_path + subject
